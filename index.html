@@ -1,0 +1,1016 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NutriChart</title>
+    <!-- Google Fonts - Roboto for main text, Dancing Script for handwriting -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&family=Dancing+Script:wght@400;700&display=swap" rel="stylesheet">
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome CDN for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" xintegrity="sha512-Fo3rlrZj/k7ujTnHg4CGR2D7kSs0V4LLanw2qksYuRlEzO+tcaEPQogQ0KaoGN26/zrn20ImR1DfuLWnOo7aBA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <!-- jsPDF CDN for PDF generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        /* CSS Variables for Theme */
+        :root {
+            --body-bg: #F5F8FA; /* Light background for overall page */
+            --container-bg: #FDFDFD; /* Light background for main box */
+            --text-color-primary: #34495E; /* Dark blue/grey for main text */
+            --text-color-secondary: #7F8C8D; /* Muted grey for secondary text */
+            --border-color: #e2e8f0; /* Light border color */
+            --nutrition-chart-bg: #f9fafb; /* Lighter background for nutrition chart */
+            --box-shadow-color: rgba(0, 0, 0, 0.1); /* Shadow for light theme */
+            --input-bg: #ffffff; /* Input background for light theme */
+            --input-border: #cbd5e0; /* Input border for light theme */
+        }
+
+        .dark-theme {
+            --body-bg: #2C3E50; /* Dark background for overall page */
+            --container-bg: #34495E; /* Dark background for main box */
+            --text-color-primary: #ECF0F1; /* Light text for main text */
+            --text-color-secondary: #BDC3C7; /* Lighter grey for secondary text */
+            --border-color: #4A627A; /* Darker border color */
+            --nutrition-chart-bg: #3D566E; /* Slightly lighter dark for nutrition chart */
+            --box-shadow-color: rgba(0, 0, 0, 0.3); /* Stronger shadow for dark theme */
+            --input-bg: #4A627A; /* Input background for dark theme */
+            --input-border: #6B8BA6; /* Input border for dark theme */
+        }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: var(--body-bg);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+            box-sizing: border-box;
+            font-size: 1rem;
+            color: var(--text-color-primary); /* Apply primary text color */
+            transition: background-color 0.3s ease, color 0.3s ease; /* Smooth transition */
+        }
+
+        /* Ensure specific elements also use the new font */
+        .container h1, .nutrition-chart h2, .btn {
+            font-family: 'Roboto', sans-serif;
+        }
+        .container {
+            background-color: var(--container-bg);
+            border-radius: 15px;
+            box-shadow: 0 10px 30px var(--box-shadow-color);
+            padding: 30px;
+            width: 100%;
+            max-width: 800px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            transition: background-color 0.3s ease, box-shadow 0.3s ease; /* Smooth transition */
+            position: relative; /* Needed for absolute positioning of toggle */
+        }
+        /* Theme Toggle Button Styling */
+        #themeToggle {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background-color: var(--text-color-secondary); /* Button background */
+            color: var(--container-bg); /* Icon color */
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            font-size: 1.2rem;
+            box-shadow: 0 2px 5px var(--box-shadow-color);
+            transition: background-color 0.3s ease, color 0.3s ease, transform 0.2s ease;
+            z-index: 10;
+        }
+        #themeToggle:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px var(--box-shadow-color);
+        }
+
+        /* New wrapper for title and quote to control their specific spacing */
+        .title-and-quote-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px; /* Reduced gap between title and quote */
+            margin-bottom: 20px; /* Adjusted space below title/quote group to accommodate new element placement */
+        }
+        /* Styling for the main H1 title */
+        .container h1 {
+            color: var(--text-color-primary); /* Use theme variable */
+            font-size: 3.5rem; /* Large font size for impact, slightly adjusted for Roboto */
+            font-weight: 700; /* Bold for Roboto */
+            text-align: left; /* Left align the title */
+            text-shadow: 3px 3px 0px rgba(0, 0, 0, 0.1); /* Subtle text shadow */
+            letter-spacing: 0.5px; /* Adjusted letter spacing for Roboto */
+            margin-bottom: 0px; /* Ensure no extra margin from h1 itself */
+            padding-left: 5px; /* Small padding to align with content */
+            display: flex; /* Use flexbox to align icon and text */
+            align-items: center; /* Vertically align icon and text */
+            gap: 10px; /* Space between icon and text */
+            transition: color 0.3s ease; /* Smooth transition */
+        }
+        /* Styling for the clickable title link */
+        #nutrichartTitleLink {
+            text-decoration: none; /* Remove underline from link */
+            color: inherit; /* Inherit color from h1 */
+            cursor: pointer; /* Indicate it's clickable */
+            display: flex; /* Maintain flex behavior for icon/text alignment */
+            align-items: center;
+            gap: 10px;
+            width: fit-content; /* Ensure the clickable area is just around the text/icon */
+        }
+        /* Styling for the icon within H1 (Font Awesome) */
+        .container h1 .icon {
+            font-size: 3rem; /* Adjust icon size to match h1 */
+            line-height: 1; /* Ensure icon aligns well */
+            color: #4CAF50; /* Green color for the leaf icon (fixed, as it's an accent) */
+        }
+        /* Styling for the quote text */
+        .quote-text {
+            font-family: 'Dancing Script', cursive; /* Handwriting font */
+            font-size: 1.2rem; /* Small text size */
+            color: var(--text-color-secondary); /* Use theme variable */
+            text-align: left;
+            margin-top: 0px; /* Ensure no extra top margin from p itself */
+            margin-bottom: 0px; /* Ensure no extra bottom margin from p itself */
+            padding-left: 70px; /* Increased padding to move it further right */
+            font-weight: 700; /* Make it a bit bolder for readability */
+            transition: color 0.3s ease; /* Smooth transition */
+        }
+        .button-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            justify-content: center;
+        }
+        .btn {
+            padding: 12px 25px; /* Default padding for buttons */
+            border-radius: 10px;
+            font-weight: 700; /* Bold for Roboto */
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            justify-content: center;
+            font-size: 0.95rem; /* Adjust button text size for new font */
+        }
+        .btn-primary {
+            background-color: #4CAF50; /* Green */
+            color: white;
+            border: none;
+            box-shadow: 0 4px 10px rgba(76, 175, 80, 0.3);
+        }
+        .btn-primary:hover {
+            background-color: #45a049;
+            box-shadow: 0 6px 15px rgba(76, 175, 80, 0.4);
+            transform: translateY(-2px);
+        }
+        .btn-secondary {
+            background-color: #007BFF; /* Blue */
+            color: white;
+            border: none;
+            box-shadow: 0 4px 10px rgba(0, 123, 255, 0.3);
+        }
+        .btn-secondary:hover {
+            background-color: #0069d9;
+            box-shadow: 0 6px 15px rgba(0, 123, 255, 0.4);
+            transform: translateY(-2px);
+        }
+        .btn-danger {
+            background-color: #dc3545; /* Red */
+            color: white;
+            border: none;
+            box-shadow: 0 4px 10px rgba(220, 53, 69, 0.3);
+        }
+        .btn-danger:hover {
+            background-color: #c82333;
+            box-shadow: 0 6px 15px rgba(220, 53, 69, 0.4);
+            transform: translateY(-2px);
+        }
+        .image-preview-container {
+            border: 2px dashed var(--border-color); /* Use theme variable */
+            border-radius: 10px;
+            min-height: 150px;
+            max-width: 250px; /* Made smaller horizontally */
+            width: 100%; /* Ensure it takes full width on small screens before max-width applies */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            background-color: var(--nutrition-chart-bg); /* Use theme variable */
+            position: relative;
+            transition: border-color 0.3s ease, background-color 0.3s ease; /* Smooth transition */
+            margin-top: -20px; /* Moved up by a few steps */
+        }
+        .image-preview {
+            max-width: 100%;
+            max-height: 250px; /* Kept original for vertical size */
+            object-fit: contain;
+            border-radius: 8px;
+        }
+        .video-stream {
+            width: 100%;
+            max-height: 400px; /* Kept original for video stream */
+            border-radius: 8px;
+            background-color: #000;
+        }
+        .nutrition-chart {
+            background-color: var(--nutrition-chart-bg); /* Use theme variable */
+            border-radius: 10px;
+            padding: 20px;
+            border: 1px solid var(--border-color); /* Use theme variable */
+            transition: background-color 0.3s ease, border-color 0.3s ease; /* Smooth transition */
+        }
+        .nutrition-chart h2 {
+            color: var(--text-color-primary); /* Use theme variable */
+            transition: color 0.3s ease; /* Smooth transition */
+        }
+        .nutrition-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px dashed var(--border-color); /* Use theme variable */
+            transition: border-color 0.3s ease; /* Smooth transition */
+        }
+        .nutrition-item:last-child {
+            border-bottom: none;
+        }
+        .nutrition-item strong, .nutrition-item span {
+            color: var(--text-color-primary); /* Ensure text color changes with theme */
+            transition: color 0.3s ease; /* Smooth transition */
+        }
+        .loading-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.8); /* Fixed overlay color for visibility */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border-radius: 10px;
+            z-index: 10;
+        }
+        .dark-theme .loading-overlay {
+            background: rgba(0, 0, 0, 0.6); /* Darker overlay in dark theme */
+        }
+        /* Styling for the new loading icon */
+        .loading-icon {
+            font-size: 3rem; /* Large icon size */
+            color: #4CAF50; /* Green color */
+            animation: spin-pulse 1.5s infinite ease-in-out; /* Apply combined animation */
+        }
+
+        /* Keyframes for the combined spin and pulse animation */
+        @keyframes spin-pulse {
+            0% {
+                transform: rotate(0deg) scale(1);
+                opacity: 1;
+            }
+            50% {
+                transform: rotate(180deg) scale(1.1);
+                opacity: 0.8;
+            }
+            100% {
+                transform: rotate(360deg) scale(1);
+                opacity: 1;
+            }
+        }
+
+        /* Footer styling */
+        .app-footer {
+            margin-top: 40px; /* Space above the footer */
+            padding-top: 20px;
+            border-top: 1px solid var(--border-color); /* Use theme variable */
+            text-align: center;
+            color: var(--text-color-secondary); /* Use theme variable */
+            font-size: 0.85rem;
+            transition: border-color 0.3s ease, color 0.3s ease; /* Smooth transition */
+        }
+        /* Text input and button styling */
+        .text-input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 20px; /* Add margin below the text input group */
+        }
+        .text-input-group input[type="text"] {
+            padding: 12px;
+            border: 1px solid var(--input-border); /* Use theme variable */
+            border-radius: 8px;
+            font-size: 1rem;
+            background-color: var(--input-bg); /* Use theme variable */
+            color: var(--text-color-primary); /* Use theme variable */
+            transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+        }
+        .text-input-group input[type="text"]::placeholder {
+            color: var(--text-color-secondary); /* Placeholder color */
+        }
+        .text-input-group input[type="text"]:focus {
+            outline: none;
+            border-color: #4CAF50; /* Highlight color on focus */
+            box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.2);
+        }
+        /* Specific styling for the Analyze Food button to make it smaller */
+        #analyzeTextBtn {
+            padding: 8px 18px; /* Smaller padding */
+            font-size: 0.85rem; /* Slightly smaller font size */
+            width: auto; /* Ensure it doesn't stretch to full width */
+            align-self: flex-start; /* Align it to the start within its flex container */
+        }
+
+        /* Adjusted placeholder text size for smaller image box */
+        #placeholderText {
+            font-size: 1rem; /* Changed from text-lg to text-base */
+        }
+
+        /* New styles for share/download buttons */
+        .share-download-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 20px; /* Space above buttons */
+        }
+        .share-download-buttons .btn {
+            padding: 10px 20px;
+            font-size: 0.9rem;
+        }
+
+        @media (max-width: 640px) {
+            .container {
+                padding: 20px;
+            }
+            .btn {
+                width: 100%;
+                font-size: 0.85rem; /* Adjust button text size for smaller screens */
+            }
+            .container h1 {
+                font-size: 2.8rem; /* Adjust font size for smaller screens */
+            }
+            .container h1 .icon {
+                font-size: 2.5rem; /* Adjust icon size for smaller screens */
+            }
+            .quote-text {
+                font-size: 1rem; /* Adjust font size for smaller screens */
+                padding-left: 40px; /* Adjust padding for smaller screens */
+            }
+            body {
+                font-size: 0.9rem; /* Adjust base font size for smaller screens */
+            }
+            .app-footer {
+                margin-top: 30px; /* Adjust space for smaller screens */
+                padding-top: 15px;
+            }
+            #themeToggle {
+                top: 15px;
+                right: 15px;
+                width: 35px;
+                height: 35px;
+                font-size: 1rem;
+            }
+            #analyzeTextBtn {
+                width: 100%; /* Make it full width on small screens */
+                padding: 10px 15px; /* Adjust padding for smaller screens */
+                font-size: 0.85rem; /* Adjust font size for smaller screens */
+            }
+            .image-preview-container {
+                max-width: 100%; /* Ensure it takes full width on small screens */
+                margin-top: 0; /* Remove negative margin on small screens for better stacking */
+            }
+            .share-download-buttons {
+                flex-direction: column; /* Stack buttons vertically on small screens */
+            }
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-4">
+    <div class="container">
+        <!-- Theme Toggle Button -->
+        <button id="themeToggle" aria-label="Toggle theme">
+            <i class="fas fa-moon"></i>
+        </button>
+
+        <!-- New wrapper for title and quote -->
+        <div class="title-and-quote-group">
+            <!-- Main Title with Icon - Now Clickable -->
+            <a href="#" id="nutrichartTitleLink">
+                <h1><span class="icon"><i class="fas fa-leaf"></i></span> NutriChart</h1>
+            </a>
+            <!-- Quote below title -->
+            <p class="quote-text">"Your daily dose of healthy insights."</p>
+        </div>
+
+        <!-- Text Input for Food Name (Moved Here) -->
+        <div class="text-input-group">
+            <input type="text" id="foodNameInput" placeholder="Enter food name (e.g., Apple, Pizza)">
+            <button id="analyzeTextBtn" class="btn btn-secondary">
+                <i class="fas fa-search"></i> Analyze Food
+            </button>
+        </div>
+
+        <!-- Image Input and Camera Controls -->
+        <div class="flex flex-col md:flex-row gap-4">
+            <div class="flex-1 flex flex-col gap-4">
+                <input type="file" id="imageUpload" accept="image/*" class="hidden" />
+                <button id="uploadBtn" class="btn btn-primary">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-4 3 3 5-5V15z" clip-rule="evenodd" />
+                    </svg>
+                    Upload Image
+                </button>
+                <button id="cameraBtn" class="btn btn-secondary">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-4 3 3 5-5V15z" />
+                    </svg>
+                    Take Photo
+                </button>
+                <button id="captureBtn" class="btn btn-primary hidden">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M4 5a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2V7a2 2 0 00-2-2h-1.586a1 1 0 01-.707-.293l-1.121-1.121A1 1 0 009.172 3H7.828a1 1 0 00-.707.293L6.293 4.707A1 1 0 015.586 5H4zm6 9a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd" />
+                    </svg>
+                    Capture Photo
+                </button>
+                <button id="stopCameraBtn" class="btn btn-danger hidden">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                    </svg>
+                    Stop Camera
+                </button>
+            </div>
+            <div class="flex-1 image-preview-container">
+                <img id="imagePreview" class="image-preview hidden" alt="Image Preview" />
+                <video id="videoStream" class="video-stream hidden" autoplay playsinline></video>
+                <canvas id="cameraCanvas" class="hidden"></canvas>
+                <span id="placeholderText" class="text-gray-500 text-base">Upload or take a photo of food</span>
+                <div id="loadingOverlay" class="loading-overlay hidden">
+                    <i class="fas fa-sync-alt loading-icon"></i> <!-- New loading icon -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Nutrition Chart Display -->
+        <div id="nutritionResult" class="nutrition-chart hidden">
+            <h2 class="text-2xl font-semibold text-gray-700 mb-4">Nutrition Information</h2>
+            <div id="nutritionDetails">
+                <!-- Nutrition details will be populated here -->
+            </div>
+            <!-- Share and Download Buttons -->
+            <div class="share-download-buttons">
+                <button id="shareBtn" class="btn btn-primary">
+                    <i class="fas fa-share-alt"></i> Share
+                </button>
+                <button id="downloadBtn" class="btn btn-secondary">
+                    <i class="fas fa-download"></i> Download
+                </button>
+            </div>
+        </div>
+
+        <!-- Footer Section -->
+        <footer class="app-footer">
+            <p>&copy; <span id="currentYear"></span> NutriChart. All rights reserved.</p>
+        </footer>
+    </div>
+
+    <script type="module">
+        // Import jsPDF from the global window object
+        const { jsPDF } = window.jspdf;
+
+        const imageUpload = document.getElementById('imageUpload');
+        const uploadBtn = document.getElementById('uploadBtn');
+        const cameraBtn = document.getElementById('cameraBtn');
+        const captureBtn = document.getElementById('captureBtn');
+        const stopCameraBtn = document.getElementById('stopCameraBtn');
+        const imagePreview = document.getElementById('imagePreview');
+        const videoStream = document.getElementById('videoStream');
+        const cameraCanvas = document.getElementById('cameraCanvas');
+        const placeholderText = document.getElementById('placeholderText');
+        const nutritionResult = document.getElementById('nutritionResult');
+        const nutritionDetails = document.getElementById('nutritionDetails');
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        const nutrichartTitleLink = document.getElementById('nutrichartTitleLink');
+        const currentYearSpan = document.getElementById('currentYear');
+        const themeToggle = document.getElementById('themeToggle');
+        const shareBtn = document.getElementById('shareBtn'); // New share button
+        const downloadBtn = document.getElementById('downloadBtn'); // New download button
+
+        // New elements for text input
+        const foodNameInput = document.getElementById('foodNameInput');
+        const analyzeTextBtn = document.getElementById('analyzeTextBtn');
+
+        let currentStream; // To store the camera stream
+        let currentNutritionData = null; // To store the last fetched nutrition data
+
+        // Set the current year in the footer
+        currentYearSpan.textContent = new Date().getFullYear();
+
+        // Function to apply theme based on preference
+        function applyTheme(theme) {
+            if (theme === 'dark') {
+                document.body.classList.add('dark-theme');
+                themeToggle.innerHTML = '<i class="fas fa-sun"></i>'; // Sun icon for dark theme
+            } else {
+                document.body.classList.remove('dark-theme');
+                themeToggle.innerHTML = '<i class="fas fa-moon"></i>'; // Moon icon for light theme
+            }
+        }
+
+        // Check for saved theme preference on load
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme) {
+            applyTheme(savedTheme);
+        } else {
+            // Default to dark theme if no preference is saved
+            applyTheme('dark');
+            localStorage.setItem('theme', 'dark'); // Save dark as default
+        }
+
+        // Event listener for theme toggle button
+        themeToggle.addEventListener('click', () => {
+            let currentTheme = localStorage.getItem('theme');
+            if (currentTheme === 'dark') {
+                applyTheme('light');
+                localStorage.setItem('theme', 'light');
+            } else {
+                applyTheme('dark');
+                localStorage.setItem('theme', 'dark');
+            }
+        });
+
+        // Function to reset the application to its initial state (homepage)
+        function resetApp() {
+            stopCamera();
+            imagePreview.src = '';
+            imagePreview.classList.add('hidden');
+            placeholderText.classList.remove('hidden');
+            nutritionResult.classList.add('hidden');
+            nutritionDetails.innerHTML = '';
+            loadingOverlay.classList.add('hidden');
+            imageUpload.value = ''; // Clear the file input
+            foodNameInput.value = ''; // Clear the text input
+            currentNutritionData = null; // Clear stored nutrition data
+        }
+
+        // Event listener for upload button click
+        uploadBtn.addEventListener('click', () => {
+            imageUpload.click();
+        });
+
+        // Event listener for image file selection
+        imageUpload.addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            if (file) {
+                stopCamera(); // Stop camera if active
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    imagePreview.src = e.target.result;
+                    imagePreview.classList.remove('hidden');
+                    placeholderText.classList.add('hidden');
+                    videoStream.classList.add('hidden');
+                    captureBtn.classList.add('hidden');
+                    stopCameraBtn.classList.add('hidden');
+                    analyzeImage(e.target.result); // Analyze the uploaded image
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // Event listener for camera button click
+        cameraBtn.addEventListener('click', async () => {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                currentStream = stream;
+                videoStream.srcObject = stream;
+                videoStream.classList.remove('hidden');
+                imagePreview.classList.add('hidden');
+                placeholderText.classList.add('hidden');
+                captureBtn.classList.remove('hidden');
+                stopCameraBtn.classList.remove('hidden');
+                nutritionResult.classList.add('hidden'); // Hide previous results
+            } catch (err) {
+                console.error("Error accessing camera: ", err);
+                alertUser("Error: Could not access camera. Please ensure you have granted camera permissions.");
+            }
+        });
+
+        // Event listener for capture photo button click
+        captureBtn.addEventListener('click', () => {
+            const context = cameraCanvas.getContext('2d');
+            cameraCanvas.width = videoStream.videoWidth;
+            cameraCanvas.height = videoStream.videoHeight;
+            context.drawImage(videoStream, 0, 0, cameraCanvas.width, cameraCanvas.height);
+            const imageDataUrl = cameraCanvas.toDataURL('image/png');
+            imagePreview.src = imageDataUrl;
+            imagePreview.classList.remove('hidden');
+            videoStream.classList.add('hidden');
+            captureBtn.classList.add('hidden');
+            stopCameraBtn.classList.add('hidden');
+            stopCamera(); // Stop camera after capturing
+            analyzeImage(imageDataUrl); // Analyze the captured image
+        });
+
+        // Event listener for stop camera button click
+        stopCameraBtn.addEventListener('click', () => {
+            stopCamera();
+        });
+
+        // Event listener for NutriChart title click
+        nutrichartTitleLink.addEventListener('click', (event) => {
+            event.preventDefault(); // Prevent default link behavior (page reload)
+            resetApp(); // Call the reset function
+        });
+
+        // Event listener for Analyze Text button click
+        analyzeTextBtn.addEventListener('click', () => {
+            const foodName = foodNameInput.value.trim();
+            if (foodName) {
+                resetApp(); // Reset app state before new analysis
+                analyzeTextFood(foodName);
+            } else {
+                alertUser("Please enter a food name to analyze.");
+            }
+        });
+
+        // Event listener for pressing Enter in the food name input
+        foodNameInput.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter') {
+                event.preventDefault(); // Prevent default form submission behavior
+                analyzeTextBtn.click(); // Programmatically click the Analyze Food button
+            }
+        });
+
+        // Event listener for Share button click
+        shareBtn.addEventListener('click', () => {
+            if (currentNutritionData) {
+                shareNutritionData(currentNutritionData);
+            } else {
+                alertUser("No nutrition data to share. Please analyze food first.");
+            }
+        });
+
+        // Event listener for Download button click
+        downloadBtn.addEventListener('click', () => {
+            if (currentNutritionData) {
+                downloadNutritionData(currentNutritionData);
+            } else {
+                alertUser("No nutrition data to download. Please analyze food first.");
+            }
+        });
+
+        // Function to stop the camera stream
+        function stopCamera() {
+            if (currentStream) {
+                currentStream.getTracks().forEach(track => track.stop());
+                videoStream.srcObject = null;
+                videoStream.classList.add('hidden');
+                captureBtn.classList.add('hidden');
+                stopCameraBtn.classList.add('hidden');
+                placeholderText.classList.remove('hidden');
+            }
+        }
+
+        // Function to display custom alert messages
+        function alertUser(message) {
+            // In a real application, you'd use a custom modal or message box here.
+            // For this example, we'll log to console and update a temporary div.
+            console.log("Alert:", message);
+            const alertDiv = document.createElement('div');
+            alertDiv.className = 'fixed top-4 right-4 bg-red-500 text-white px-4 py-2 rounded-md shadow-lg z-50';
+            alertDiv.textContent = message; // Set the message text
+            document.body.appendChild(alertDiv);
+            setTimeout(() => {
+                alertDiv.remove();
+            }, 5000); // Remove after 5 seconds
+        }
+
+        // Function to analyze the image using the Gemini API
+        async function analyzeImage(imageDataUrl) {
+            loadingOverlay.classList.remove('hidden');
+            nutritionResult.classList.add('hidden');
+            nutritionDetails.innerHTML = ''; // Clear previous results
+
+            // Extract base64 data from data URL
+            const base64ImageData = imageDataUrl.split(',')[1];
+
+            try {
+                let chatHistory = [];
+                const prompt = "Analyze the food or beverage in this image and provide its nutritional information in JSON format. Include 'foodName', 'calories', 'protein', 'carbohydrates', 'fat', 'ingredients', 'servingSize', and 'vitamins' (as an array of strings, e.g., ['Vitamin C', 'Vitamin A']). If you cannot identify the food, return an empty object. Example JSON: { \"foodName\": \"Apple\", \"calories\": \"95 kcal\", \"protein\": \"0.5 g\", \"carbohydrates\": \"25 g\", \"fat\": \"0.3 g\", \"ingredients\": [\"apple\"], \"servingSize\": \"1 medium\", \"vitamins\": [\"Vitamin C\", \"Potassium\"] }";
+
+                chatHistory.push({ role: "user", parts: [{ text: prompt }] });
+
+                const payload = {
+                    contents: [
+                        {
+                            role: "user",
+                            parts: [
+                                { text: prompt },
+                                {
+                                    inlineData: {
+                                        mimeType: "image/png", // Assuming PNG for captured images, adjust if needed
+                                        data: base64ImageData
+                                    }
+                                }
+                            ]
+                        }
+                    ],
+                    generationConfig: {
+                        responseMimeType: "application/json",
+                        responseSchema: {
+                            type: "OBJECT",
+                            properties: {
+                                "foodName": { "type": "STRING" },
+                                "calories": { "type": "STRING" },
+                                "protein": { "type": "STRING" },
+                                "carbohydrates": { "type": "STRING" },
+                                "fat": { "type": "STRING" },
+                                "ingredients": {
+                                    "type": "ARRAY",
+                                    "items": { "type": "STRING" }
+                                },
+                                "servingSize": { "type": "STRING" },
+                                "vitamins": { // Added vitamins property
+                                    "type": "ARRAY",
+                                    "items": { "type": "STRING" }
+                                }
+                            },
+                            "propertyOrdering": ["foodName", "calories", "protein", "carbohydrates", "fat", "ingredients", "servingSize", "vitamins"]
+                        }
+                    }
+                };
+
+                const apiKey = ""; // Canvas will automatically provide this
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const result = await response.json();
+                console.log("Image analysis API response:", result); // Log the full response
+
+                if (result.candidates && result.candidates.length > 0 &&
+                    result.candidates[0].content && result.candidates[0].content.parts &&
+                    result.candidates[0].content.parts.length > 0 &&
+                    typeof result.candidates[0].content.parts[0].text === 'string') { // Ensure text is a string
+                    const jsonString = result.candidates[0].content.parts[0].text;
+                    try {
+                        const nutritionData = JSON.parse(jsonString);
+                        currentNutritionData = nutritionData; // Store data for sharing/download
+                        displayNutrition(nutritionData);
+                        nutritionResult.scrollIntoView({ behavior: 'smooth' }); // Auto-scroll
+                    } catch (parseError) {
+                        console.error("Error parsing JSON from image analysis:", parseError, jsonString);
+                        alertUser("Could not process nutrition information from the image. Invalid data format.");
+                    }
+                } else {
+                    alertUser("Could not get nutrition information. Please try another image.");
+                    console.error("Unexpected API response structure for image analysis:", result);
+                }
+
+            } catch (error) {
+                console.error("Error analyzing image:", error);
+                alertUser("An error occurred while analyzing the image. Please try again.");
+            } finally {
+                loadingOverlay.classList.add('hidden');
+            }
+        }
+
+        // New function to analyze food by text input
+        async function analyzeTextFood(foodName) {
+            loadingOverlay.classList.remove('hidden');
+            nutritionResult.classList.add('hidden');
+            nutritionDetails.innerHTML = ''; // Clear previous results
+            imagePreview.classList.add('hidden'); // Hide any previous image
+            placeholderText.classList.add('hidden'); // Hide placeholder text
+
+            try {
+                // 1. Generate Image based on food name
+                const payloadImage = {
+                    instances: { prompt: `photorealistic image of ${foodName}` },
+                    parameters: { "sampleCount": 1 }
+                };
+                const apiKey = ""; // Canvas will automatically provide this
+                const apiUrlImage = `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=${apiKey}`;
+
+                const responseImage = await fetch(apiUrlImage, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payloadImage)
+                });
+                const resultImage = await responseImage.json();
+                console.log("Image generation API response:", resultImage); // Log the full response
+
+                if (resultImage.predictions && resultImage.predictions.length > 0 && resultImage.predictions[0].bytesBase64Encoded) {
+                    const imageUrl = `data:image/png;base64,${resultImage.predictions[0].bytesBase64Encoded}`;
+                    imagePreview.src = imageUrl;
+                    imagePreview.classList.remove('hidden');
+                    // Scroll to image preview first
+                    imagePreview.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                } else {
+                    console.warn("Could not generate image for food:", foodName, resultImage);
+                    imagePreview.src = 'https://placehold.co/600x300/CCCCCC/333333?text=Image+Not+Available'; // Fallback
+                    imagePreview.classList.remove('hidden');
+                }
+
+                // 2. Get Nutrition Information
+                const promptNutrition = `Provide the nutritional information for "${foodName}" in JSON format. Include 'foodName', 'calories', 'protein', 'carbohydrates', 'fat', 'ingredients', 'servingSize', and 'vitamins' (as an array of strings, e.g., ['Vitamin C', 'Vitamin A']). If you cannot identify the food, return an empty object. Example JSON: { \"foodName\": \"Apple\", \"calories\": \"95 kcal\", \"protein\": \"0.5 g\", \"carbohydrates\": \"25 g\", \"fat\": \"0.3 g\", \"ingredients\": [\"apple\"], \"servingSize\": \"1 medium\", \"vitamins\": [\"Vitamin C\", \"Potassium\"] }`;
+
+                const payloadNutrition = {
+                    contents: [{ role: "user", parts: [{ text: promptNutrition }] }],
+                    generationConfig: {
+                        responseMimeType: "application/json",
+                        responseSchema: {
+                            type: "OBJECT",
+                            properties: {
+                                "foodName": { "type": "STRING" },
+                                "calories": { "type": "STRING" },
+                                "protein": { "type": "STRING" },
+                                "carbohydrates": { "type": "STRING" },
+                                "fat": { "type": "STRING" },
+                                "ingredients": {
+                                    "type": "ARRAY",
+                                    "items": { "type": "STRING" }
+                                },
+                                "servingSize": { "type": "STRING" },
+                                "vitamins": { // Added vitamins property
+                                    "type": "ARRAY",
+                                    "items": { "type": "STRING" }
+                                }
+                            },
+                            "propertyOrdering": ["foodName", "calories", "protein", "carbohydrates", "fat", "ingredients", "servingSize", "vitamins"]
+                        }
+                    }
+                };
+                const apiUrlNutrition = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+
+                const responseNutrition = await fetch(apiUrlNutrition, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payloadNutrition)
+                });
+                const resultNutrition = await responseNutrition.json();
+                console.log("Nutrition analysis API response:", resultNutrition); // Log the full response
+
+                if (resultNutrition.candidates && resultNutrition.candidates.length > 0 &&
+                    resultNutrition.candidates[0].content && resultNutrition.candidates[0].content.parts &&
+                    resultNutrition.candidates[0].content.parts.length > 0 &&
+                    typeof resultNutrition.candidates[0].content.parts[0].text === 'string') { // Ensure text is a string
+                    const jsonString = resultNutrition.candidates[0].content.parts[0].text;
+                    try {
+                        const nutritionData = JSON.parse(jsonString);
+                        currentNutritionData = nutritionData; // Store data for sharing/download
+                        displayNutrition(nutritionData);
+                        nutritionResult.scrollIntoView({ behavior: 'smooth' }); // Auto-scroll to nutrition chart
+                    } catch (parseError) {
+                        console.error("Error parsing JSON from nutrition analysis:", parseError, jsonString);
+                        alertUser("Could not process nutrition information. Invalid data format.");
+                    }
+                } else {
+                    alertUser("Could not get nutrition information for the entered food. Please try again.");
+                    console.error("Unexpected API response structure for nutrition analysis:", resultNutrition);
+                }
+
+            } catch (error) {
+                console.error("Error analyzing food by text:", error);
+                alertUser("An error occurred while analyzing the food. Please try again.");
+            } finally {
+                loadingOverlay.classList.add('hidden');
+            }
+        }
+
+        // Function to display the nutrition information
+        function displayNutrition(data) {
+            if (Object.keys(data).length === 0 || !data.foodName) {
+                nutritionDetails.innerHTML = '<p class="text-center text-gray-600">Could not identify the food or get nutrition information.</p>';
+            } else {
+                let html = `<div class="nutrition-item"><strong>Food Item:</strong> <span>${data.foodName || 'N/A'}</span></div>`;
+                html += `<div class="nutrition-item"><strong>Calories:</strong> <span>${data.calories || 'N/A'}</span></div>`;
+                html += `<div class="nutrition-item"><strong>Protein:</strong> <span>${data.protein || 'N/A'}</span></div>`;
+                html += `<div class="nutrition-item"><strong>Carbohydrates:</strong> <span>${data.carbohydrates || 'N/A'}</span></div>`;
+                html += `<div class="nutrition-item"><strong>Fat:</strong> <span>${data.fat || 'N/A'}</span></div>`;
+                html += `<div class="nutrition-item"><strong>Serving Size:</strong> <span>${data.servingSize || 'N/A'}</span></div>`;
+
+                if (data.ingredients && data.ingredients.length > 0) {
+                    html += `<div class="nutrition-item"><strong>Ingredients:</strong> <span>${data.ingredients.join(', ') || 'N/A'}</span></div>`;
+                } else {
+                    html += `<div class="nutrition-item"><strong>Ingredients:</strong> <span>N/A</span></div>`;
+                }
+
+                // Display vitamins if available
+                if (data.vitamins && data.vitamins.length > 0) {
+                    html += `<div class="nutrition-item"><strong>Vitamins:</strong> <span>${data.vitamins.join(', ') || 'N/A'}</span></div>`;
+                } else {
+                    html += `<div class="nutrition-item"><strong>Vitamins:</strong> <span>N/A</span></div>`;
+                }
+
+                nutritionDetails.innerHTML = html;
+            }
+            nutritionResult.classList.remove('hidden');
+        }
+
+        // Function to format nutrition data into a readable string for sharing/downloading
+        function formatNutritionData(data) {
+            let text = `--- Nutrition Information for ${data.foodName || 'Unknown Food'} ---\n\n`;
+            text += `Calories: ${data.calories || 'N/A'}\n`;
+            text += `Protein: ${data.protein || 'N/A'}\n`;
+            text += `Carbohydrates: ${data.carbohydrates || 'N/A'}\n`;
+            text += `Fat: ${data.fat || 'N/A'}\n`;
+            text += `Serving Size: ${data.servingSize || 'N/A'}\n`;
+            text += `Ingredients: ${data.ingredients && data.ingredients.length > 0 ? data.ingredients.join(', ') : 'N/A'}\n`;
+            text += `Vitamins: ${data.vitamins && data.vitamins.length > 0 ? data.vitamins.join(', ') : 'N/A'}\n`;
+            text += `\n--- NutriChart - Your daily dose of healthy insights. ---`;
+            return text;
+        }
+
+        // Function to handle sharing nutrition data
+        async function shareNutritionData(data) {
+            const shareText = formatNutritionData(data);
+
+            if (navigator.share) {
+                // Use Web Share API if available
+                try {
+                    await navigator.share({
+                        title: `NutriChart - Nutrition for ${data.foodName || 'Food Item'}`,
+                        text: shareText,
+                    });
+                    console.log('Nutrition data shared successfully via Web Share API.');
+                    alertUser('Nutrition information shared!');
+                } catch (error) {
+                    console.error('Error sharing nutrition data via Web Share API:', error);
+                    // Fallback to clipboard if Web Share API fails
+                    try {
+                        const textarea = document.createElement('textarea');
+                        textarea.value = shareText;
+                        document.body.appendChild(textarea);
+                        textarea.select();
+                        document.execCommand('copy');
+                        document.body.removeChild(textarea);
+                        alertUser('Sharing failed. Nutrition information copied to clipboard instead!');
+                        console.log('Nutrition information copied to clipboard as fallback.');
+                    } catch (err) {
+                        console.error('Failed to copy text to clipboard:', err);
+                        alertUser('Failed to share and could not copy to clipboard.');
+                    }
+                }
+            } else {
+                // Fallback for browsers that do not support Web Share API
+                console.log('Web Share API not supported. Falling back to clipboard copy.');
+                try {
+                    const textarea = document.createElement('textarea');
+                    textarea.value = shareText;
+                    document.body.appendChild(textarea);
+                    textarea.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(textarea);
+                    alertUser('Nutrition information copied to clipboard!');
+                    console.log('Nutrition information copied to clipboard.');
+                } catch (err) {
+                    console.error('Failed to copy text to clipboard:', err);
+                    alertUser('Failed to copy nutrition data to clipboard. Please copy it manually.');
+                }
+            }
+        }
+
+        // Function to handle downloading nutrition data as PDF
+        function downloadNutritionData(data) {
+            const doc = new jsPDF();
+            const filename = `NutriChart_${data.foodName || 'Nutrition'}_${new Date().toISOString().slice(0, 10)}.pdf`;
+
+            doc.setFontSize(20);
+            doc.text(`Nutrition Information for ${data.foodName || 'Unknown Food'}`, 10, 20);
+
+            doc.setFontSize(12);
+            let y = 40;
+            const lineHeight = 10;
+
+            const addLine = (label, value) => {
+                doc.text(`${label}: ${value || 'N/A'}`, 10, y);
+                y += lineHeight;
+            };
+
+            addLine('Calories', data.calories);
+            addLine('Protein', data.protein);
+            addLine('Carbohydrates', data.carbohydrates);
+            addLine('Fat', data.fat);
+            addLine('Serving Size', data.servingSize);
+            addLine('Ingredients', data.ingredients && data.ingredients.length > 0 ? data.ingredients.join(', ') : 'N/A');
+            addLine('Vitamins', data.vitamins && data.vitamins.length > 0 ? data.vitamins.join(', ') : 'N/A');
+
+            doc.text('--- NutriChart - Your daily dose of healthy insights. ---', 10, y + 10);
+
+            doc.save(filename);
+            alertUser('Nutrition information downloaded as PDF successfully!');
+        }
+    </script>
+</body>
+</html>
