@@ -793,8 +793,16 @@
                     try {
                         const nutritionData = JSON.parse(jsonString);
                         currentNutritionData = nutritionData; // Store data for sharing/download
-                        displayNutrition(nutritionData);
-                        nutritionResult.scrollIntoView({ behavior: 'smooth' }); // Auto-scroll
+
+                        // Check if the parsed data is empty or foodName is missing
+                        if (Object.keys(nutritionData).length === 0 || !nutritionData.foodName) {
+                            alertUser("Could not identify the food or get nutrition information from the image. Please try a clearer photo, a simpler food item, or use the text input option.");
+                            nutritionDetails.innerHTML = '<p class="text-center text-gray-600">Could not identify the food or get nutrition information. Please try a clearer photo, a simpler food item, or use the text input option.</p>';
+                            nutritionResult.classList.remove('hidden'); // Still show the chart area with the message
+                        } else {
+                            displayNutrition(nutritionData);
+                            nutritionResult.scrollIntoView({ behavior: 'smooth' }); // Auto-scroll
+                        }
                     } catch (parseError) {
                         console.error("Error parsing JSON from image analysis:", parseError, jsonString);
                         alertUser("Could not process nutrition information from the image. Invalid data format.");
@@ -882,8 +890,16 @@
                         const nutritionData = JSON.parse(jsonString);
                         currentNutritionData = nutritionData; // Store data for sharing/download
                         console.log("Parsed Nutrition Data (text input):", nutritionData);
-                        displayNutrition(nutritionData);
-                        nutritionResult.scrollIntoView({ behavior: 'smooth' }); // Auto-scroll to nutrition chart
+                        
+                        // Check if the parsed data is empty or foodName is missing
+                        if (Object.keys(nutritionData).length === 0 || !nutritionData.foodName) {
+                            alertUser("Could not find nutrition information for '" + foodName + "'. Please try a different name or use the image upload option.");
+                            nutritionDetails.innerHTML = '<p class="text-center text-gray-600">Could not find nutrition information for "' + foodName + '". Please try a different name or use the image upload option.</p>';
+                            nutritionResult.classList.remove('hidden'); // Still show the chart area with the message
+                        } else {
+                            displayNutrition(nutritionData);
+                            nutritionResult.scrollIntoView({ behavior: 'smooth' }); // Auto-scroll to nutrition chart
+                        }
                     } catch (parseError) {
                         console.error("Error parsing JSON from nutrition analysis (text input):", parseError, jsonString);
                         alertUser("Could not process nutrition information. Invalid data format.");
@@ -905,6 +921,8 @@
         // Function to display the nutrition information
         function displayNutrition(data) {
             if (Object.keys(data).length === 0 || !data.foodName) {
+                // This case is now handled directly in analyzeImage and analyzeTextFood
+                // so this block should theoretically not be reached for empty data.
                 nutritionDetails.innerHTML = '<p class="text-center text-gray-600">Could not identify the food or get nutrition information.</p>';
             } else {
                 let html = `<div class="nutrition-item"><strong>Food Item:</strong> <span>${data.foodName || 'N/A'}</span></div>`;
