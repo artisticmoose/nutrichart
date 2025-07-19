@@ -3,10 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NutriChart</title>
-    <!-- Favicon Link - Placeholder generated for a green leaf icon -->
-    <link rel="icon" href="https://placehold.co/32x32/4CAF50/ffffff?text=🌿" type="image/png" sizes="32x32">
-    <!-- Remember to replace the above placeholder URL with your actual favicon file (e.g., /favicon.ico or /favicon.png) -->
+    <title>NutriChart - Food Nutrition Analysis & Health Insights</title>
+
+    <!-- SEO Meta Tags -->
+    <meta name="description" content="NutriChart helps you instantly analyze food nutrition from images or text. Get detailed calorie, protein, carb, fat, and vitamin information for a healthier lifestyle.">
+    <meta name="keywords" content="food nutrition, nutrition analysis, calorie counter, healthy eating, food scanner, diet tracker, protein, carbohydrates, fat, vitamins, health app, food analyzer">
+    <meta name="author" content="NutriChart Team">
+
+    <!-- Open Graph / Social Media Meta Tags (for Facebook, LinkedIn, etc.) -->
+    <meta property="og:title" content="NutriChart - Instant Food Nutrition Analysis">
+    <meta property="og:description" content="Analyze your food instantly with NutriChart. Get detailed nutritional breakdowns from photos or text input to support your healthy eating goals.">
+    <meta property="og:image" content="https://placehold.co/1200x630/4CAF50/ffffff?text=NutriChart+Social"> <!-- Replace with your actual logo/image -->
+    <meta property="og:url" content="https://nutrichart.info"> <!-- Replace with your actual website URL -->
+    <meta property="og:type" content="website">
+
+    <!-- Twitter Card Meta Tags -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="NutriChart - Instant Food Nutrition Analysis">
+    <meta name="twitter:description" content="Analyze your food instantly with NutriChart. Get detailed nutritional breakdowns from photos or text input to support your healthy eating goals.">
+    <meta name="twitter:image" content="https://placehold.co/800x418/4CAF50/ffffff?text=NutriChart+Twitter"> <!-- Replace with your actual logo/image -->
+
+    <!-- Favicon Link - Now using inline SVG for better compatibility -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path fill='rgb(76, 175, 80)' d='M10.89 1.47c-.52-.52-1.37-.52-1.89 0L.98 9.5a1.34 1.34 0 0 0 0 1.89l3.54 3.54a1.34 1.34 0 0 0 1.89 0l8.03-8.03c.52-.52.52-1.37 0-1.89L10.89 1.47zM6.5 12.5l-2-2 5-5 2 2-5 5z'/></svg>" type="image/svg+xml">
 
     <!-- Google Fonts - Roboto for main text, Dancing Script for handwriting -->
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&family=Dancing+Script:wght@400;700&display=swap" rel="stylesheet">
@@ -503,10 +521,16 @@
         <!-- Footer Section -->
         <footer class="app-footer">
             <p>&copy; <span id="currentYear"></span> NutriChart. All rights reserved.</p>
+            <p>Visitors: <span id="visitorCount">Loading...</span></p>
         </footer>
     </div>
 
     <script type="module">
+        // Firebase Imports
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc, runTransaction } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
         // Import jsPDF from the global window object
         const { jsPDF } = window.jspdf;
 
@@ -528,6 +552,7 @@
         const themeToggle = document.getElementById('themeToggle');
         const shareBtn = document.getElementById('shareBtn'); // New share button
         const downloadBtn = document.getElementById('downloadBtn'); // New download button
+        const visitorCountSpan = document.getElementById('visitorCount'); // New visitor count span
 
         // New elements for text input
         const foodNameInput = document.getElementById('foodNameInput');
@@ -542,6 +567,82 @@
         let currentStream; // To store the camera stream
         let currentNutritionData = null; // To store the last fetched nutrition data
         let currentFacingMode = 'environment'; // 'environment' for rear, 'user' for front
+
+        // Global variables provided by the Canvas environment
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        let firebaseApp;
+        let db;
+        let auth;
+        let userId; // To store the authenticated user ID
+
+        // Function to initialize Firebase and authenticate
+        async function initializeFirebase() {
+            if (!firebaseConfig) {
+                console.error("Firebase config not available. Cannot initialize Firebase.");
+                alertUser("Firebase is not configured. Visitor count will not be available.");
+                visitorCountSpan.textContent = "N/A";
+                return;
+            }
+
+            try {
+                firebaseApp = initializeApp(firebaseConfig);
+                db = getFirestore(firebaseApp);
+                auth = getAuth(firebaseApp);
+
+                // Authenticate the user
+                if (initialAuthToken) {
+                    await signInWithCustomToken(auth, initialAuthToken);
+                    console.log("Signed in with custom token.");
+                } else {
+                    await signInAnonymously(auth);
+                    console.log("Signed in anonymously.");
+                }
+
+                userId = auth.currentUser?.uid || crypto.randomUUID(); // Get UID or generate random for unauthenticated
+                console.log("User ID:", userId);
+
+                // Fetch and update visitor count after successful authentication
+                await updateVisitorCount();
+
+            } catch (error) {
+                console.error("Error initializing Firebase or authenticating:", error);
+                alertUser("Failed to initialize Firebase or authenticate. Visitor count may not work.");
+                visitorCountSpan.textContent = "Error";
+            }
+        }
+
+        // Function to update visitor count in Firestore
+        async function updateVisitorCount() {
+            if (!db) {
+                console.error("Firestore not initialized.");
+                visitorCountSpan.textContent = "Error";
+                return;
+            }
+
+            // Reference to the public visitor count document
+            const countDocRef = doc(db, `artifacts/${appId}/public/data/visitorCounts/mainCount`);
+
+            try {
+                await runTransaction(db, async (transaction) => {
+                    const sfDoc = await transaction.get(countDocRef);
+                    let currentCount = 0;
+                    if (sfDoc.exists()) {
+                        currentCount = sfDoc.data().count || 0;
+                    }
+                    const newCount = currentCount + 1;
+                    transaction.set(countDocRef, { count: newCount });
+                    visitorCountSpan.textContent = newCount;
+                    console.log("Visitor count updated to:", newCount);
+                });
+            } catch (e) {
+                console.error("Transaction failed: ", e);
+                visitorCountSpan.textContent = "Error";
+                alertUser("Failed to update visitor count.");
+            }
+        }
 
         // Set the current year in the footer
         currentYearSpan.textContent = new Date().getFullYear();
@@ -1140,6 +1241,9 @@
             doc.save(filename);
             alertUser('Nutrition information downloaded as PDF successfully!');
         }
+
+        // Call initializeFirebase when the DOM is fully loaded
+        document.addEventListener('DOMContentLoaded', initializeFirebase);
     </script>
 </body>
 </html>
