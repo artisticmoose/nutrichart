@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <meta name="google-site-verification" content="-ohCisok2qzEo0GJsLpJ2yAcXmyQ0wlhnwTB5rmXgXk" />
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NutriChart - Food Nutrition Analysis & Health Insights</title>
@@ -186,38 +187,38 @@
             width: auto; /* Allow width to be determined by content, like Analyze Food button */
         }
         .btn-primary {
-            background-color: #4CAF50; /* Green */
-            color: white;
-            border: none;
-            box-shadow: 0 4px 8px rgba(76, 175, 80, 0.2); /* Subtle initial shadow */
-        }
-        .btn-primary:hover {
-            background-color: #45a049;
-            transform: translateY(-2px);
-            box-shadow: 0 6px 12px rgba(76, 175, 80, 0.3); /* More pronounced shadow on hover */
-        }
-        .btn-secondary {
-            background-color: #007BFF; /* Blue */
-            color: white;
-            border: none;
-            box-shadow: 0 4px 8px rgba(0, 123, 255, 0.2); /* Subtle initial shadow */
-        }
-        .btn-secondary:hover {
-            background-color: #0069d9;
-            transform: translateY(-2px);
-            box-shadow: 0 6px 12px rgba(0, 123, 255, 0.3); /* More pronounced shadow on hover */
-        }
-        .btn-danger {
-            background-color: #dc3545; /* Red */
-            color: white;
-            border: none;
-            box-shadow: 0 4px 8px rgba(220, 53, 69, 0.2); /* Subtle initial shadow */
-        }
-        .btn-danger:hover {
-            background-color: #c82333;
-            transform: translateY(-2px);
-            box-shadow: 0 6px 12px rgba(220, 53, 69, 0.3); /* More pronounced shadow on hover */
-        }
+                background-color: #4CAF50; /* Green */
+                color: white;
+                border: none;
+                box-shadow: 0 4px 8px rgba(76, 175, 80, 0.2); /* Subtle initial shadow */
+            }
+            .btn-primary:hover {
+                background-color: #45a049;
+                transform: translateY(-2px);
+                box-shadow: 0 6px 12px rgba(76, 175, 80, 0.3); /* More pronounced shadow on hover */
+            }
+            .btn-secondary {
+                background-color: #007BFF; /* Blue */
+                color: white;
+                border: none;
+                box-shadow: 0 4px 8px rgba(0, 123, 255, 0.2); /* Subtle initial shadow */
+            }
+            .btn-secondary:hover {
+                background-color: #0069d9;
+                transform: translateY(-2px);
+                box-shadow: 0 6px 12px rgba(0, 123, 255, 0.3); /* More pronounced shadow on hover */
+            }
+            .btn-danger {
+                background-color: #dc3545; /* Red */
+                color: white;
+                border: none;
+                box-shadow: 0 4px 8px rgba(220, 53, 69, 0.2); /* Subtle initial shadow */
+            }
+            .btn-danger:hover {
+                background-color: #c82333;
+                transform: translateY(-2px);
+                box-shadow: 0 6px 12px rgba(220, 53, 69, 0.3); /* More pronounced shadow on hover */
+            }
         .image-preview-container {
             border: 2px dashed var(--border-color); /* Use theme variable */
             border-radius: 10px;
@@ -521,16 +522,10 @@
         <!-- Footer Section -->
         <footer class="app-footer">
             <p>&copy; <span id="currentYear"></span> NutriChart. All rights reserved.</p>
-            <p>Visitors: <span id="visitorCount">Loading...</span></p>
         </footer>
     </div>
 
     <script type="module">
-        // Firebase Imports
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, getDoc, setDoc, runTransaction } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
         // Import jsPDF from the global window object
         const { jsPDF } = window.jspdf;
 
@@ -552,7 +547,6 @@
         const themeToggle = document.getElementById('themeToggle');
         const shareBtn = document.getElementById('shareBtn'); // New share button
         const downloadBtn = document.getElementById('downloadBtn'); // New download button
-        const visitorCountSpan = document.getElementById('visitorCount'); // New visitor count span
 
         // New elements for text input
         const foodNameInput = document.getElementById('foodNameInput');
@@ -567,82 +561,6 @@
         let currentStream; // To store the camera stream
         let currentNutritionData = null; // To store the last fetched nutrition data
         let currentFacingMode = 'environment'; // 'environment' for rear, 'user' for front
-
-        // Global variables provided by the Canvas environment
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
-        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
-
-        let firebaseApp;
-        let db;
-        let auth;
-        let userId; // To store the authenticated user ID
-
-        // Function to initialize Firebase and authenticate
-        async function initializeFirebase() {
-            if (!firebaseConfig) {
-                console.error("Firebase config not available. Cannot initialize Firebase.");
-                alertUser("Firebase is not configured. Visitor count will not be available.");
-                visitorCountSpan.textContent = "N/A";
-                return;
-            }
-
-            try {
-                firebaseApp = initializeApp(firebaseConfig);
-                db = getFirestore(firebaseApp);
-                auth = getAuth(firebaseApp);
-
-                // Authenticate the user
-                if (initialAuthToken) {
-                    await signInWithCustomToken(auth, initialAuthToken);
-                    console.log("Signed in with custom token.");
-                } else {
-                    await signInAnonymously(auth);
-                    console.log("Signed in anonymously.");
-                }
-
-                userId = auth.currentUser?.uid || crypto.randomUUID(); // Get UID or generate random for unauthenticated
-                console.log("User ID:", userId);
-
-                // Fetch and update visitor count after successful authentication
-                await updateVisitorCount();
-
-            } catch (error) {
-                console.error("Error initializing Firebase or authenticating:", error);
-                alertUser("Failed to initialize Firebase or authenticate. Visitor count may not work.");
-                visitorCountSpan.textContent = "Error";
-            }
-        }
-
-        // Function to update visitor count in Firestore
-        async function updateVisitorCount() {
-            if (!db) {
-                console.error("Firestore not initialized.");
-                visitorCountSpan.textContent = "Error";
-                return;
-            }
-
-            // Reference to the public visitor count document
-            const countDocRef = doc(db, `artifacts/${appId}/public/data/visitorCounts/mainCount`);
-
-            try {
-                await runTransaction(db, async (transaction) => {
-                    const sfDoc = await transaction.get(countDocRef);
-                    let currentCount = 0;
-                    if (sfDoc.exists()) {
-                        currentCount = sfDoc.data().count || 0;
-                    }
-                    const newCount = currentCount + 1;
-                    transaction.set(countDocRef, { count: newCount });
-                    visitorCountSpan.textContent = newCount;
-                    console.log("Visitor count updated to:", newCount);
-                });
-            } catch (e) {
-                console.error("Transaction failed: ", e);
-                visitorCountSpan.textContent = "Error";
-                alertUser("Failed to update visitor count.");
-            }
-        }
 
         // Set the current year in the footer
         currentYearSpan.textContent = new Date().getFullYear();
@@ -1241,9 +1159,6 @@
             doc.save(filename);
             alertUser('Nutrition information downloaded as PDF successfully!');
         }
-
-        // Call initializeFirebase when the DOM is fully loaded
-        document.addEventListener('DOMContentLoaded', initializeFirebase);
     </script>
 </body>
 </html>
