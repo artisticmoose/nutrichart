@@ -1,10 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta name="google-site-verification" content="-ohCisok2qzEo0GJsLpJ2yAcXmyQ0wlhnwTB5rmXgXk" />
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NutriChart</title>
+    <!-- Favicon Link - Placeholder generated for a green leaf icon -->
+    <link rel="icon" href="https://placehold.co/32x32/4CAF50/ffffff?text=🌿" type="image/png" sizes="32x32">
+    <!-- Remember to replace the above placeholder URL with your actual favicon file (e.g., /favicon.ico or /favicon.png) -->
+
     <!-- Google Fonts - Roboto for main text, Dancing Script for handwriting -->
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&family=Dancing+Script:wght@400;700&display=swap" rel="stylesheet">
     <!-- Tailwind CSS CDN -->
@@ -101,6 +104,7 @@
             flex-direction: column;
             gap: 5px; /* Reduced gap between title and quote */
             margin-bottom: 20px; /* Adjusted space below title/quote group to accommodate new element placement */
+            padding-right: 60px; /* Added padding to prevent overlap with toggle button */
         }
         /* Styling for the main H1 title */
         .container h1 {
@@ -147,62 +151,60 @@
         }
         .button-group {
             display: flex;
-            flex-wrap: wrap;
             gap: 15px;
             justify-content: center;
         }
         .btn {
-            padding: 8px 18px; /* Adjusted padding for smaller buttons */
+            padding: 8px 18px; /* Consistent padding */
             border-radius: 10px;
-            font-weight: 700; /* Bold for Roboto */
+            font-weight: 700;
             cursor: pointer;
             transition: all 0.2s ease-in-out;
             display: flex;
             align-items: center;
             gap: 8px;
             justify-content: center;
-            font-size: 0.85rem; /* Adjusted font size for smaller buttons */
-            width: auto; /* Allow buttons to size based on content */
+            font-size: 0.85rem;
+            width: auto; /* Allow width to be determined by content, like Analyze Food button */
         }
         .btn-primary {
             background-color: #4CAF50; /* Green */
             color: white;
             border: none;
-            box-shadow: 0 4px 10px rgba(76, 175, 80, 0.3);
+            box-shadow: 0 4px 8px rgba(76, 175, 80, 0.2); /* Subtle initial shadow */
         }
         .btn-primary:hover {
             background-color: #45a049;
-            box-shadow: 0 6px 15px rgba(76, 175, 80, 0.4);
             transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(76, 175, 80, 0.3); /* More pronounced shadow on hover */
         }
         .btn-secondary {
             background-color: #007BFF; /* Blue */
             color: white;
             border: none;
-            box-shadow: 0 4px 10px rgba(0, 123, 255, 0.3);
+            box-shadow: 0 4px 8px rgba(0, 123, 255, 0.2); /* Subtle initial shadow */
         }
         .btn-secondary:hover {
             background-color: #0069d9;
-            box-shadow: 0 6px 15px rgba(0, 123, 255, 0.4);
             transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0, 123, 255, 0.3); /* More pronounced shadow on hover */
         }
         .btn-danger {
             background-color: #dc3545; /* Red */
             color: white;
             border: none;
-            box-shadow: 0 4px 10px rgba(220, 53, 69, 0.3);
+            box-shadow: 0 4px 8px rgba(220, 53, 69, 0.2); /* Subtle initial shadow */
         }
         .btn-danger:hover {
             background-color: #c82333;
-            box-shadow: 0 6px 15px rgba(220, 53, 69, 0.4);
             transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(220, 53, 69, 0.3); /* More pronounced shadow on hover */
         }
         .image-preview-container {
             border: 2px dashed var(--border-color); /* Use theme variable */
             border-radius: 10px;
-            min-height: 150px;
-            max-width: 250px; /* Made smaller horizontally */
-            width: 100%; /* Ensure it takes full width on small screens before max-width applies */
+            width: 100px; /* Very small fixed width */
+            height: 100px; /* Very small fixed height */
             display: flex;
             justify-content: center;
             align-items: center;
@@ -210,17 +212,19 @@
             background-color: var(--nutrition-chart-bg); /* Use theme variable */
             position: relative;
             transition: border-color 0.3s ease, background-color 0.3s ease; /* Smooth transition */
-            margin-top: -20px; /* Moved up by a few steps */
+            flex-shrink: 0; /* Prevent shrinking */
+            flex-grow: 0; /* Prevent growing */
         }
         .image-preview {
-            max-width: 100%;
-            max-height: 250px; /* Kept original for vertical size */
-            object-fit: contain;
+            width: 100%; /* Make image fill the container width */
+            height: 100%; /* Make image fill the container height */
+            object-fit: contain; /* Scale image down to fit, maintaining aspect ratio, without cropping */
             border-radius: 8px;
         }
         .video-stream {
             width: 100%;
-            max-height: 400px; /* Kept original for video stream */
+            height: 100%; /* Ensure video fills the fixed container */
+            object-fit: cover; /* Cover the container, cropping if necessary */
             border-radius: 8px;
             background-color: #000;
         }
@@ -329,6 +333,16 @@
             width: auto; /* Ensure it doesn't stretch to full width */
             align-self: flex-start; /* Align it to the start within its flex container */
         }
+        /* Style for the loading spinner inside the button */
+        #analyzeTextBtn .loading-spinner {
+            display: none; /* Hidden by default */
+        }
+        #analyzeTextBtn.loading .loading-spinner {
+            display: inline-block; /* Show when loading */
+        }
+        #analyzeTextBtn.loading .button-text {
+            display: none; /* Hide text when loading */
+        }
 
         /* Adjusted placeholder text size for smaller image box */
         #placeholderText {
@@ -351,19 +365,22 @@
             .container {
                 padding: 20px;
             }
-            .btn {
-                width: 100%; /* Make buttons full width on small screens */
-                font-size: 0.85rem; /* Adjust button text size for smaller screens */
+            /* Adjusted padding for title group on small screens to prevent overlap */
+            .title-and-quote-group {
+                padding-right: 70px; /* Increased padding to give more space on the right */
             }
             .container h1 {
-                font-size: 2.8rem; /* Adjust font size for smaller screens */
+                font-size: 2rem; /* Adjusted font size for smaller screens */
             }
             .container h1 .icon {
-                font-size: 2.5rem; /* Adjust icon size for smaller screens */
+                font-size: 1.8rem; /* Adjusted icon size for smaller screens */
             }
             .quote-text {
-                font-size: 1rem; /* Adjust font size for smaller screens */
-                padding-left: 40px; /* Adjust padding for smaller screens */
+                font-size: 0.75rem; /* Further reduced font size for smaller screens */
+                padding-left: 10px; /* Further reduced padding for smaller screens */
+                white-space: nowrap; /* Prevent wrapping */
+                overflow: hidden; /* Hide overflow if it still happens */
+                text-overflow: ellipsis; /* Add ellipsis if text overflows */
             }
             body {
                 font-size: 0.9rem; /* Adjust base font size for smaller screens */
@@ -374,7 +391,7 @@
             }
             #themeToggle {
                 top: 15px;
-                right: 15px;
+                right: 10px; /* Moved button slightly more to the right */
                 width: 35px;
                 height: 35px;
                 font-size: 1rem;
@@ -385,8 +402,9 @@
                 font-size: 0.85rem; /* Adjust font size for smaller screens */
             }
             .image-preview-container {
-                max-width: 100%; /* Ensure it takes full width on small screens */
-                margin-top: 0; /* Remove negative margin on small screens for better stacking */
+                width: 100px; /* Fixed width for small screens */
+                height: 100px; /* Fixed height for small screens */
+                margin-top: 0; /* Ensure no negative margin on small screens */
             }
             .share-download-buttons {
                 flex-direction: column; /* Stack buttons vertically on small screens */
@@ -415,14 +433,15 @@
         <div class="text-input-group">
             <input type="text" id="foodNameInput" placeholder="Enter food name (e.g., Apple, Pizza)">
             <button id="analyzeTextBtn" class="btn btn-secondary">
-                <i class="fas fa-search"></i> Analyze Food
+                <span class="button-text"><i class="fas fa-search"></i> Analyze Food</span>
+                <i class="fas fa-spinner fa-spin loading-spinner"></i>
             </button>
         </div>
 
         <!-- Image Input and Camera Controls -->
-        <div id="imageInputSection" class="flex flex-col md:flex-row gap-4">
-            <!-- Buttons container - now flex-row and flex-wrap -->
-            <div class="flex-1 flex flex-row flex-wrap justify-center gap-3">
+        <div id="imageInputSection" class="flex flex-col md:flex-row gap-4 md:justify-center">
+            <!-- Buttons container - now responsive flex direction -->
+            <div class="w-full md:w-auto flex flex-col sm:flex-row justify-center gap-3">
                 <input type="file" id="imageUpload" accept="image/*" class="hidden" />
                 <button id="uploadBtn" class="btn btn-primary">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
@@ -448,9 +467,12 @@
                     </svg>
                     Stop Camera
                 </button>
+                <button id="switchCameraBtn" class="btn btn-secondary hidden">
+                    <i class="fas fa-camera-rotate"></i> Switch Camera
+                </button>
             </div>
             <!-- The image-preview-container starts hidden -->
-            <div class="flex-1 image-preview-container hidden">
+            <div class="flex-1 image-preview-container hidden mx-auto">
                 <img id="imagePreview" class="image-preview hidden" alt="Image Preview" />
                 <video id="videoStream" class="video-stream hidden" autoplay playsinline></video>
                 <canvas id="cameraCanvas" class="hidden"></canvas>
@@ -493,6 +515,7 @@
         const cameraBtn = document.getElementById('cameraBtn');
         const captureBtn = document.getElementById('captureBtn');
         const stopCameraBtn = document.getElementById('stopCameraBtn');
+        const switchCameraBtn = document.getElementById('switchCameraBtn'); // Get the new button
         const imagePreview = document.getElementById('imagePreview');
         const videoStream = document.getElementById('videoStream');
         const cameraCanvas = document.getElementById('cameraCanvas');
@@ -518,6 +541,7 @@
 
         let currentStream; // To store the camera stream
         let currentNutritionData = null; // To store the last fetched nutrition data
+        let currentFacingMode = 'environment'; // 'environment' for rear, 'user' for front
 
         // Set the current year in the footer
         currentYearSpan.textContent = new Date().getFullYear();
@@ -584,6 +608,7 @@
             videoStream.classList.add('hidden'); // Ensure video is hidden if image is displayed
             captureBtn.classList.add('hidden');
             stopCameraBtn.classList.add('hidden');
+            switchCameraBtn.classList.add('hidden'); // Hide switch button after capture
             
             imagePreview.src = imageDataUrl;
             await analyzeImage(imageDataUrl); // Analyze the image
@@ -602,12 +627,22 @@
             }
         });
 
-        // Event listener for camera button click
-        cameraBtn.addEventListener('click', async () => {
+        // Function to start the camera with a specific facing mode
+        async function startCamera() {
             try {
-                imagePreviewContainer.classList.remove('hidden'); // Show the image preview container
+                imagePreviewContainer.classList.remove('hidden');
+                nutritionResult.classList.add('hidden'); // Hide previous results
 
-                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                // Stop any existing stream before starting a new one
+                stopCamera();
+
+                const constraints = {
+                    video: {
+                        facingMode: currentFacingMode // Use the current facing mode
+                    }
+                };
+
+                const stream = await navigator.mediaDevices.getUserMedia(constraints);
                 currentStream = stream;
                 videoStream.srcObject = stream;
                 videoStream.classList.remove('hidden');
@@ -615,12 +650,59 @@
                 placeholderText.classList.add('hidden');
                 captureBtn.classList.remove('hidden');
                 stopCameraBtn.classList.remove('hidden');
-                nutritionResult.classList.add('hidden'); // Hide previous results
+                switchCameraBtn.classList.remove('hidden'); // Show switch button
+                updateSwitchCameraButtonText(); // Update button text/icon based on current mode
+
             } catch (err) {
                 console.error("Error accessing camera: ", err);
-                alertUser("Error: Could not access camera. Please ensure you have granted camera permissions.");
-                imagePreviewContainer.classList.add('hidden'); // Hide container if camera fails
+                // Fallback if specific facingMode fails (e.g., environment not found)
+                if (err.name === "OverconstrainedError" || err.name === "NotFoundError") {
+                    alertUser(`Error: ${currentFacingMode} camera not found or accessible. Trying default camera.`);
+                    // Try with just 'user' if 'environment' fails, or 'environment' if 'user' fails
+                    currentFacingMode = (currentFacingMode === 'environment') ? 'user' : 'environment';
+                    
+                    // If we've already tried both and failed, or if the error is more general,
+                    // try with just 'true' to let the browser pick any available camera.
+                    // This prevents an infinite loop if both specific modes fail.
+                    if (err.name === "NotFoundError" || err.name === "OverconstrainedError") {
+                        // Check if we already tried the other specific mode
+                        const triedBothSpecificModes = (currentFacingMode === 'user' && err.name === "OverconstrainedError"); // Simplified check
+                        if (!triedBothSpecificModes) { // If not, try the other specific mode
+                            startCamera(); // Retry with the toggled mode
+                            return; // Exit to prevent further execution in this catch block
+                        }
+                    }
+                    // If specific modes failed, try with generic 'true'
+                    alertUser("Trying with any available camera.");
+                    currentFacingMode = true; // Fallback to any camera
+                    startCamera(); // Retry with generic true
+                } else {
+                    alertUser("Error: Could not access camera. Please ensure you have granted camera permissions.");
+                    imagePreviewContainer.classList.add('hidden');
+                }
             }
+        }
+
+        // Helper function to update the text/icon of the switch camera button
+        function updateSwitchCameraButtonText() {
+            if (currentFacingMode === 'environment') {
+                switchCameraBtn.innerHTML = '<i class="fas fa-camera-rotate"></i> Switch to Front';
+            } else {
+                switchCameraBtn.innerHTML = '<i class="fas fa-camera-rotate"></i> Switch to Rear';
+            }
+        }
+
+        // Event listener for camera button click - now calls startCamera
+        cameraBtn.addEventListener('click', () => {
+            currentFacingMode = 'environment'; // Default to rear camera when "Take Photo" is clicked
+            startCamera();
+        });
+
+        // Event listener for switch camera button click
+        switchCameraBtn.addEventListener('click', () => {
+            // Toggle facing mode
+            currentFacingMode = (currentFacingMode === 'environment') ? 'user' : 'environment';
+            startCamera(); // Restart camera with new facing mode
         });
 
         // Event listener for capture photo button click
@@ -693,6 +775,7 @@
                 videoStream.classList.add('hidden');
                 captureBtn.classList.add('hidden');
                 stopCameraBtn.classList.add('hidden');
+                switchCameraBtn.classList.add('hidden'); // Hide switch button when camera stops
                 placeholderText.classList.remove('hidden'); // Show placeholder when camera stops
             }
         }
@@ -824,6 +907,11 @@
         // Modified function to analyze food by text input (NO IMAGE GENERATION)
         async function analyzeTextFood(foodName) {
             console.log(`Starting text analysis for: "${foodName}"`);
+            
+            // Show loading spinner and disable button
+            analyzeTextBtn.classList.add('loading');
+            analyzeTextBtn.disabled = true;
+
             loadingOverlay.classList.remove('hidden'); // Show loading for nutrition analysis
             nutritionResult.classList.add('hidden');
             nutritionDetails.innerHTML = ''; // Clear previous results
@@ -837,6 +925,10 @@
                 alertUser("API Key is missing for text analysis. Please replace 'YOUR_API_KEY_HERE' in the code with your actual Google Cloud API key.");
                 console.error("API Key is missing for text analysis. Please replace 'YOUR_API_KEY_HERE' in the code with your actual Google Cloud API key.");
                 loadingOverlay.classList.add('hidden');
+                
+                // Hide loading spinner and enable button
+                analyzeTextBtn.classList.remove('loading');
+                analyzeTextBtn.disabled = false;
                 return; // Stop execution if API key is missing
             }
 
@@ -916,6 +1008,9 @@
             } finally {
                 loadingOverlay.classList.add('hidden');
                 console.log("Text analysis process finished. Loading overlay hidden.");
+                // Hide loading spinner and enable button
+                analyzeTextBtn.classList.remove('loading');
+                analyzeTextBtn.disabled = false;
             }
         }
 
